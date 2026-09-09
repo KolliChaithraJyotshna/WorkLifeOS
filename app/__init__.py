@@ -39,7 +39,7 @@ def create_app(config_name='development'):
     
     # Register blueprints
     with app.app_context():
-        from app.routes import auth_bp, tasks_bp, calendar_bp, notes_bp, expenses_bp, habits_bp, services_bp
+        from .routes import auth_bp, tasks_bp, calendar_bp, notes_bp, expenses_bp, habits_bp, services_bp
         
         app.register_blueprint(auth_bp)
         app.register_blueprint(tasks_bp)
