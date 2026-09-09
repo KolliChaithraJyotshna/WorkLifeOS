@@ -1,1 +1,106 @@
-\"\"\"WorkLifeOS Application Factory\"\"\"\nfrom flask import Flask\nfrom flask_sqlalchemy import SQLAlchemy\nfrom flask_jwt_extended import JWTManager\nfrom flask_cors import CORS\nfrom dotenv import load_dotenv\nimport os\nimport logging\n\n# Load environment variables\nload_dotenv()\n\n# Initialize extensions\ndb = SQLAlchemy()\njwt = JWTManager()\n\ndef create_app(config_name='development'):\n    \"\"\"Application factory function\"\"\"\n    app = Flask(__name__)\n    \n    # Configuration\n    if config_name == 'production':\n        from app.config import ProductionConfig\n        app.config.from_object(ProductionConfig)\n    elif config_name == 'testing':\n        from app.config import TestingConfig\n        app.config.from_object(TestingConfig)\n    else:\n        from app.config import DevelopmentConfig\n        app.config.from_object(DevelopmentConfig)\n    \n    # Initialize extensions\n    db.init_app(app)\n    jwt.init_app(app)\n    CORS(app)\n    \n    # Configure logging\n    setup_logging(app)\n    \n    # Register blueprints\n    with app.app_context():\n        from app.routes import auth_bp, tasks_bp, calendar_bp, notes_bp, expenses_bp, habits_bp, services_bp\n        \n        app.register_blueprint(auth_bp)\n        app.register_blueprint(tasks_bp)\n        app.register_blueprint(calendar_bp)\n        app.register_blueprint(notes_bp)\n        app.register_blueprint(expenses_bp)\n        app.register_blueprint(habits_bp)\n        app.register_blueprint(services_bp)\n        \n        # Create tables\n        db.create_all()\n    \n    # Error handlers\n    register_error_handlers(app)\n    \n    # Health check endpoint\n    @app.route('/health', methods=['GET'])\n    def health():\n        return {'status': 'healthy', 'message': 'WorkLifeOS API is running'}, 200\n    \n    return app\n\ndef setup_logging(app):\n    \"\"\"Setup application logging\"\"\"\n    log_level = os.getenv('LOG_LEVEL', 'INFO')\n    \n    # Create logs directory if it doesn't exist\n    if not os.path.exists('logs'):\n        os.makedirs('logs')\n    \n    handler = logging.FileHandler('logs/worklifeos.log')\n    handler.setLevel(getattr(logging, log_level))\n    \n    formatter = logging.Formatter(\n        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'\n    )\n    handler.setFormatter(formatter)\n    \n    app.logger.addHandler(handler)\n    app.logger.setLevel(getattr(logging, log_level))\n\ndef register_error_handlers(app):\n    \"\"\"Register error handlers\"\"\"\n    \n    @app.errorhandler(400)\n    def bad_request(error):\n        return {'error': 'Bad request', 'message': str(error)}, 400\n    \n    @app.errorhandler(401)\n    def unauthorized(error):\n        return {'error': 'Unauthorized', 'message': 'Authentication required'}, 401\n    \n    @app.errorhandler(403)\n    def forbidden(error):\n        return {'error': 'Forbidden', 'message': 'Permission denied'}, 403\n    \n    @app.errorhandler(404)\n    def not_found(error):\n        return {'error': 'Not found', 'message': 'Resource not found'}, 404\n    \n    @app.errorhandler(500)\n    def internal_error(error):\n        db.session.rollback()\n        return {'error': 'Internal server error', 'message': str(error)}, 500\n"
+"""WorkLifeOS Application Factory"""
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import JWTManager
+from flask_cors import CORS
+from dotenv import load_dotenv
+import os
+import logging
+
+# Load environment variables
+load_dotenv()
+
+# Initialize extensions
+db = SQLAlchemy()
+jwt = JWTManager()
+
+def create_app(config_name='development'):
+    """Application factory function"""
+    app = Flask(__name__)
+    
+    # Configuration
+    if config_name == 'production':
+        from app.config import ProductionConfig
+        app.config.from_object(ProductionConfig)
+    elif config_name == 'testing':
+        from app.config import TestingConfig
+        app.config.from_object(TestingConfig)
+    else:
+        from app.config import DevelopmentConfig
+        app.config.from_object(DevelopmentConfig)
+    
+    # Initialize extensions
+    db.init_app(app)
+    jwt.init_app(app)
+    CORS(app)
+    
+    # Configure logging
+    setup_logging(app)
+    
+    # Register blueprints
+    with app.app_context():
+        from app.routes import auth_bp, tasks_bp, calendar_bp, notes_bp, expenses_bp, habits_bp, services_bp
+        
+        app.register_blueprint(auth_bp)
+        app.register_blueprint(tasks_bp)
+        app.register_blueprint(calendar_bp)
+        app.register_blueprint(notes_bp)
+        app.register_blueprint(expenses_bp)
+        app.register_blueprint(habits_bp)
+        app.register_blueprint(services_bp)
+        
+        # Create tables
+        db.create_all()
+    
+    # Error handlers
+    register_error_handlers(app)
+    
+    # Health check endpoint
+    @app.route('/health', methods=['GET'])
+    def health():
+        return {'status': 'healthy', 'message': 'WorkLifeOS API is running'}, 200
+    
+    return app
+
+def setup_logging(app):
+    """Setup application logging"""
+    log_level = os.getenv('LOG_LEVEL', 'INFO')
+    
+    # Create logs directory if it doesn't exist
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+    
+    handler = logging.FileHandler('logs/worklifeos.log')
+    handler.setLevel(getattr(logging, log_level))
+    
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    handler.setFormatter(formatter)
+    
+    app.logger.addHandler(handler)
+    app.logger.setLevel(getattr(logging, log_level))
+
+def register_error_handlers(app):
+    """Register error handlers"""
+    
+    @app.errorhandler(400)
+    def bad_request(error):
+        return {'error': 'Bad request', 'message': str(error)}, 400
+    
+    @app.errorhandler(401)
+    def unauthorized(error):
+        return {'error': 'Unauthorized', 'message': 'Authentication required'}, 401
+    
+    @app.errorhandler(403)
+    def forbidden(error):
+        return {'error': 'Forbidden', 'message': 'Permission denied'}, 403
+    
+    @app.errorhandler(404)
+    def not_found(error):
+        return {'error': 'Not found', 'message': 'Resource not found'}, 404
+    
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return {'error': 'Internal server error', 'message': str(error)}, 500
