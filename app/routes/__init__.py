@@ -11,6 +11,6 @@ habits_bp = Blueprint('habits', __name__, url_prefix='/api/habits')
 services_bp = Blueprint('services', __name__, url_prefix='/api/services')
 
 # Import route handlers
-from app.routes import auth, tasks, calendar, notes, expenses, habits, services
+from . import auth, tasks, calendar, notes, expenses, habits, services
 
 __all__ = ['auth_bp', 'tasks_bp', 'calendar_bp', 'notes_bp', 'expenses_bp', 'habits_bp', 'services_bp']
